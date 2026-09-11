@@ -1,0 +1,64 @@
+#include <SPI.h>
+#include <LoRa.h>
+
+// ================================================================
+// PIN DEFINITIONS FOR SX1276
+// ================================================================
+#define LORA_NSS   5
+#define LORA_RST   14
+#define LORA_DIO0  27
+
+const long LORA_FREQUENCY = 433E6; // 433 MHz (Must match TX)
+
+// ================================================================
+// SETUP
+// ================================================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial);
+
+  Serial.println(F("--- LoRa SX1276 Receiver ---"));
+
+  // Configure LoRa module pins
+  LoRa.setPins(LORA_NSS, LORA_RST, LORA_DIO0);
+
+  // Initialize LoRa at 433 MHz
+  if (!LoRa.begin(LORA_FREQUENCY)) {
+    Serial.println(F("[ERROR] LoRa initialization failed! Check wiring."));
+    while (1); // Halt execution on failure
+  }
+
+  Serial.println(F("[INFO] LoRa SX1276 Initialized Successfully. Listening for packets..."));
+  Serial.println(F("---------------------------------------------------------------------"));
+}
+
+// ================================================================
+// MAIN LOOP
+// ================================================================
+void loop() {
+  // Check if a packet has arrived
+  int packetSize = LoRa.parsePacket();
+
+  if (packetSize) {
+    String receivedData = "";
+
+    // Read packet payload character by character
+    while (LoRa.available()) {
+      receivedData += (char)LoRa.read();
+    }
+
+    // Print received packet to Serial Monitor
+    Serial.print(F("[RX] Received Packet (Size: "));
+    Serial.print(packetSize);
+    Serial.println(F(" bytes):"));
+    Serial.println(receivedData);
+
+    // Print Signal Quality Metrics
+    Serial.print(F(" -> RSSI: "));
+    Serial.print(LoRa.packetRssi());
+    Serial.print(F(" dBm | SNR: "));
+    Serial.print(LoRa.packetSnr());
+    Serial.println(F(" dB"));
+    Serial.println(F("---------------------------------------------------------------------"));
+  }
+}
